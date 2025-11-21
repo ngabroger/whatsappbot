@@ -14,6 +14,16 @@ if (!fs.existsSync(authPath)) {
     fs.mkdirSync(authPath, { recursive: true });
 }
 
+// ==================== START API SERVER FIRST ====================
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+console.log('🚀 Starting API Server...');
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+// Start API server immediately
+require('./api');
+
+// ==================== THEN INITIALIZE CLIENT ====================
+
 // Initialize WhatsApp Client
 const client = new Client({
     authStrategy: new LocalAuth({
@@ -36,13 +46,12 @@ const client = new Client({
 
 // ==================== EVENTS ====================
 
-// Event: QR Code - Print ke console
+// Event: QR Code
 client.on('qr', (qr) => {
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📱 SCAN QR CODE DI BAWAH INI:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     
-    // Print QR code di terminal
     qrcode.generate(qr, { small: true });
     
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -64,16 +73,13 @@ client.on('authenticated', () => {
 // Event: Ready
 client.on('ready', () => {
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('✅ WhatsApp Bot is READY!');
+    console.log('✅ WhatsApp Client is READY!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`📌 Bot Name: ${process.env.BOT_NAME}`);
     console.log(`📞 Admin: ${process.env.ADMIN_NUMBER}`);
     console.log(`📦 Version: ${process.env.VERSION}`);
     console.log(`🌐 API Port: ${process.env.API_PORT || 3000}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    
-    // Start API Server after bot ready
-    require('./api');
 });
 
 // Event: Authentication Failure
@@ -91,7 +97,7 @@ client.on('loading_screen', (percent, message) => {
     console.log(`⏳ Loading... ${percent}% - ${message}`);
 });
 
-// Event: Message Received (LOGGING ONLY)
+// Event: Message Received
 client.on('message', async (message) => {
     try {
         const chat = await message.getChat();
@@ -200,28 +206,35 @@ async function getAllGroups() {
 // ==================== INITIALIZATION ====================
 
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('🚀 Starting WhatsApp Bot...');
+console.log('🚀 Initializing WhatsApp Client...');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log(`📦 Environment: ${process.env.NODE_ENV}`);
-console.log(`🌐 API Port: ${process.env.API_PORT || 3000}`);
 console.log(`📌 Bot Name: ${process.env.BOT_NAME}`);
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
 client.initialize().catch(err => {
     console.error('❌ Failed to initialize WhatsApp client:', err);
-    process.exit(1);
+    // Don't exit, API server still running
 });
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
     console.log('\n⚠️ Shutting down gracefully...');
-    await client.destroy();
+    try {
+        await client.destroy();
+    } catch (e) {
+        console.log('Client already destroyed');
+    }
     process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
     console.log('\n⚠️ Shutting down gracefully...');
-    await client.destroy();
+    try {
+        await client.destroy();
+    } catch (e) {
+        console.log('Client already destroyed');
+    }
     process.exit(0);
 });
 
