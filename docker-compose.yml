@@ -11,8 +11,9 @@ services:
       - ./wwebjs_auth:/app/.wwebjs_auth
       # Persist uploads
       - ./uploads:/app/uploads
-      # Mount environment file
-      - ./.env:/app/.env:ro
+    # Load .env file
+    env_file:
+      - .env
     # Use tmpfs for Chromium user data (prevents lock issues)
     tmpfs:
       - /tmp:size=512M
