@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  whatsapp-bot:
+    build: .
+    container_name: whatsapp-bot
+    ports:
+      - "3601:3000"
+    volumes:
+      # Persist WhatsApp session
+      - ./wwebjs_auth:/app/.wwebjs_auth
+      # Persist uploads
+      - ./uploads:/app/uploads
+      # Mount environment file
+      - ./.env:/app/.env:ro
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Jakarta
+    restart: unless-stopped
+    networks:
+      - whatsapp-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    mem_limit: 512m
+    cpus: 1.0
+
+networks:
+  whatsapp-network:
+    driver: bridge
+
+volumes:
+  wwebjs_auth:
+  uploads:
