@@ -13,6 +13,9 @@ services:
       - ./uploads:/app/uploads
       # Mount environment file
       - ./.env:/app/.env:ro
+    # Use tmpfs for Chromium user data (prevents lock issues)
+    tmpfs:
+      - /tmp:size=512M
     environment:
       - NODE_ENV=production
       - TZ=Asia/Jakarta
@@ -24,13 +27,15 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    # Important: Increase shared memory size for Chromium
+    shm_size: '2gb'
+    # Optional: Resource limits
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 512M
+          memory: 1G
         reservations:
-          memory: 256M
+          memory: 512M
 
 networks:
   whatsapp-network:

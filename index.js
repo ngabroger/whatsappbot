@@ -2,7 +2,7 @@ const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 require('dotenv').config();
 
-// Initialize WhatsApp Client with Docker-friendly config
+// Initialize WhatsApp Client
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: '.wwebjs_auth'
@@ -13,69 +13,117 @@ const client = new Client({
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
+            '--disable-gpu',
             '--no-first-run',
             '--no-zygote',
-            '--single-process', // Important for Docker
-            '--disable-gpu',
-            '--disable-extensions',
-            '--disable-software-rasterizer'
-        ],
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
+            '--disable-background-networking',
+            '--disable-default-apps'
+        ]
     }
 });
 
 // ==================== EVENTS ====================
 
-client.on('qr', (qr) => {
-    console.log('\n📱 Scan QR Code dengan WhatsApp:');
-    qrcode.generate(qr, { small: true });
+// Event: QR Code
+client.on('qr', async (qr) => {
+    console.log('\n📱 QR Code generated!');
+    console.log(`🌐 Open browser: http://localhost:${process.env.PORT || 3000}/qr`);
+    
+    try {
+        // Generate QR code as data URL
+        const qrDataUrl = await qrcode.toDataURL(qr);
+        
+        // Store latest QR
+        global.latestQR = qrDataUrl;
+        
+        // Emit to all connected clients
+        if (global.io) {
+            global.io.emit('qr', qrDataUrl);
+            console.log('✅ QR Code sent to web interface');
+        }
+    } catch (error) {
+        console.error('❌ Error generating QR:', error);
+    }
 });
 
+// Event: Ready
 client.on('ready', () => {
     console.log('\n✅ WhatsApp Client is ready!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`📌 Bot Name: ${process.env.BOT_NAME}`);
     console.log(`📞 Admin: ${process.env.ADMIN_NUMBER}`);
     console.log(`📦 Version: ${process.env.VERSION}`);
-    console.log(`🔇 Command Mode: DISABLED (API Only)`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     
+    // Clear QR code
+    global.latestQR = null;
+    
+    // Emit ready status
+    if (global.io) {
+        global.io.emit('ready', {
+            message: 'WhatsApp connected!',
+            bot: process.env.BOT_NAME
+        });
+    }
+    
+    // Start API Server after bot ready
     require('./api');
 });
 
+// Event: Authenticated
 client.on('authenticated', () => {
     console.log('🔐 Authentication successful!');
+    
+    // Clear QR and emit authenticated
+    global.latestQR = null;
+    if (global.io) {
+        global.io.emit('authenticated');
+    }
 });
 
+// Event: Authentication Failure
 client.on('auth_failure', (msg) => {
     console.error('❌ Authentication failed:', msg);
-    process.exit(1);
+    
+    if (global.io) {
+        global.io.emit('auth_failure', { message: msg });
+    }
 });
 
+// Event: Disconnected
 client.on('disconnected', (reason) => {
     console.log('⚠️ Client disconnected:', reason);
+    
+    if (global.io) {
+        global.io.emit('disconnected', { reason });
+    }
 });
 
+// Event: Loading Screen
 client.on('loading_screen', (percent, message) => {
-    console.log('⏳ Loading...', percent, message);
+    console.log(`⏳ Loading... ${percent}% - ${message}`);
+    
+    if (global.io) {
+        global.io.emit('loading', { percent, message });
+    }
 });
 
+// Event: Message Received (LOGGING ONLY - NO RESPONSE)
 client.on('message', async (message) => {
     try {
         const chat = await message.getChat();
         const contact = await message.getContact();
         
+        // Log incoming message (untuk monitoring)
         const messageLog = {
             from: contact.pushname || contact.number,
-            message: message.body.substring(0, 50), // Limit 50 char untuk privacy
+            message: message.body.substring(0, 50),
             isGroup: chat.isGroup,
             groupName: chat.isGroup ? chat.name : null,
             timestamp: new Date().toISOString()
         };
         
         console.log('📨 Message Received:', JSON.stringify(messageLog, null, 2));
-        
         
     } catch (error) {
         console.error('❌ Error logging message:', error);
@@ -84,7 +132,6 @@ client.on('message', async (message) => {
 
 // Event: Message Create (Log sent messages from API)
 client.on('message_create', async (message) => {
-    // Log sent messages (dari API)
     if (message.fromMe) {
         console.log('📤 Message sent via API:', message.body.substring(0, 50));
     }
@@ -92,9 +139,6 @@ client.on('message_create', async (message) => {
 
 // ==================== HELPER FUNCTIONS ====================
 
-/**
- * Format uptime to readable string
- */
 function formatUptime(seconds) {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
@@ -110,19 +154,9 @@ function formatUptime(seconds) {
     return uptime;
 }
 
-/**
- * Send message to number/group
- */
 async function sendMessage(to, text) {
     try {
-        // Auto-detect format
-        let chatId;
-        if(to.includes('@g.us') || to.includes('@c.us')) {
-            chatId = to;
-        } else {
-            chatId = `${to}@c.us`;
-        }
-        
+        let chatId = to.includes('@') ? to : `${to}@c.us`;
         await client.sendMessage(chatId, text);
         console.log(`✅ Message sent to ${to}`);
         return { success: true };
@@ -132,19 +166,9 @@ async function sendMessage(to, text) {
     }
 }
 
-/**
- * Send media to chat
- */
 async function sendMedia(to, mediaPath, caption = '') {
     try {
-        // Auto-detect format
-        let chatId;
-        if(to.includes('@g.us') || to.includes('@c.us')) {
-            chatId = to;
-        } else {
-            chatId = `${to}@c.us`;
-        }
-        
+        let chatId = to.includes('@') ? to : `${to}@c.us`;
         const media = MessageMedia.fromFilePath(mediaPath);
         await client.sendMessage(chatId, media, { caption });
         console.log(`✅ Media sent to ${to}`);
@@ -155,9 +179,6 @@ async function sendMedia(to, mediaPath, caption = '') {
     }
 }
 
-/**
- * Get client status
- */
 async function getStatus() {
     try {
         const state = await client.getState();
@@ -178,9 +199,6 @@ async function getStatus() {
     }
 }
 
-/**
- * Get all groups
- */
 async function getAllGroups() {
     try {
         const chats = await client.getChats();
@@ -199,10 +217,14 @@ async function getAllGroups() {
 
 // ==================== INITIALIZATION ====================
 
-// Initialize client
-client.initialize();
+// Initialize client with error handling
+console.log('🚀 Starting WhatsApp Bot...');
+client.initialize().catch(err => {
+    console.error('❌ Failed to initialize WhatsApp client:', err);
+    process.exit(1);
+});
 
-// Handle process termination
+// Graceful shutdown
 process.on('SIGINT', async () => {
     console.log('\n⚠️ Shutting down gracefully...');
     await client.destroy();
