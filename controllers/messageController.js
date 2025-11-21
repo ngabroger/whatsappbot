@@ -10,7 +10,7 @@ const sendMessage = async(req, res) => {
                 success: false,
                 message: 'to (number/groupId) and message are required',
                 example: {
-                    personal: { to: "6285861585955", message: "Hello" },
+                    personal: { to: "1029309809809123", message: "Hello" },
                     group: { to: "120363xxxxx@g.us", message: "Hello Group" }
                 }
             });
