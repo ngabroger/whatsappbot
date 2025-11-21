@@ -1,5 +1,5 @@
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
-const qrcode = require('qrcode');
+const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
@@ -36,104 +36,67 @@ const client = new Client({
 
 // ==================== EVENTS ====================
 
-// Event: QR Code
-client.on('qr', async (qr) => {
-    const port = process.env.API_PORT || 3000;
-    console.log('\n📱 QR Code generated!');
-    console.log(`🌐 Local: http://localhost:${port}/qr`);
-    console.log(`🌐 Remote: http://YOUR_SERVER_IP:${port}/qr`);
+// Event: QR Code - Print ke console
+client.on('qr', (qr) => {
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📱 SCAN QR CODE DI BAWAH INI:');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     
-    try {
-        const qrDataUrl = await qrcode.toDataURL(qr);
-        global.latestQR = qrDataUrl;
-        
-        if (global.io) {
-            global.io.emit('qr', qrDataUrl);
-            console.log('✅ QR Code sent to web interface');
-        }
-    } catch (error) {
-        console.error('❌ Error generating QR:', error);
-    }
+    // Print QR code di terminal
+    qrcode.generate(qr, { small: true });
+    
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📋 CARA SCAN:');
+    console.log('1. Buka WhatsApp di ponsel');
+    console.log('2. Tap Menu (⋮) atau Settings');
+    console.log('3. Tap Linked Devices');
+    console.log('4. Tap Link a Device');
+    console.log('5. Scan QR Code di atas');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 });
 
 // Event: Authenticated
 client.on('authenticated', () => {
     console.log('🔐 Authentication successful!');
     console.log('💾 Session saved to .wwebjs_auth');
-    global.latestQR = null;
-    if (global.io) {
-        global.io.emit('authenticated');
-    }
 });
 
 // Event: Ready
 client.on('ready', () => {
-    console.log('\n✅ WhatsApp Client is ready!');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('✅ WhatsApp Bot is READY!');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`📌 Bot Name: ${process.env.BOT_NAME}`);
     console.log(`📞 Admin: ${process.env.ADMIN_NUMBER}`);
     console.log(`📦 Version: ${process.env.VERSION}`);
-    console.log(`🌐 API: http://localhost:${process.env.API_PORT || 3000}`);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    
-    global.latestQR = null;
-    
-    if (global.io) {
-        global.io.emit('ready', {
-            message: 'WhatsApp connected!',
-            bot: process.env.BOT_NAME
-        });
-    }
+    console.log(`🌐 API Port: ${process.env.API_PORT || 3000}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     
     // Start API Server after bot ready
     require('./api');
 });
 
-// Event: Authenticated
-client.on('authenticated', () => {
-    console.log('🔐 Authentication successful!');
-    
-    // Clear QR and emit authenticated
-    global.latestQR = null;
-    if (global.io) {
-        global.io.emit('authenticated');
-    }
-});
-
 // Event: Authentication Failure
 client.on('auth_failure', (msg) => {
     console.error('❌ Authentication failed:', msg);
-    
-    if (global.io) {
-        global.io.emit('auth_failure', { message: msg });
-    }
 });
 
 // Event: Disconnected
 client.on('disconnected', (reason) => {
     console.log('⚠️ Client disconnected:', reason);
-    
-    if (global.io) {
-        global.io.emit('disconnected', { reason });
-    }
 });
 
 // Event: Loading Screen
 client.on('loading_screen', (percent, message) => {
     console.log(`⏳ Loading... ${percent}% - ${message}`);
-    
-    if (global.io) {
-        global.io.emit('loading', { percent, message });
-    }
 });
 
-// Event: Message Received (LOGGING ONLY - NO RESPONSE)
+// Event: Message Received (LOGGING ONLY)
 client.on('message', async (message) => {
     try {
         const chat = await message.getChat();
         const contact = await message.getContact();
         
-        // Log incoming message (untuk monitoring)
         const messageLog = {
             from: contact.pushname || contact.number,
             message: message.body.substring(0, 50),
@@ -149,7 +112,7 @@ client.on('message', async (message) => {
     }
 });
 
-// Event: Message Create (Log sent messages from API)
+// Event: Message Create
 client.on('message_create', async (message) => {
     if (message.fromMe) {
         console.log('📤 Message sent via API:', message.body.substring(0, 50));
@@ -236,10 +199,13 @@ async function getAllGroups() {
 
 // ==================== INITIALIZATION ====================
 
-// Initialize client with error handling
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log('🚀 Starting WhatsApp Bot...');
-console.log('📦 Environment:', process.env.NODE_ENV);
-console.log('🌐 Port:', process.env.API_PORT || 3000);
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+console.log(`📦 Environment: ${process.env.NODE_ENV}`);
+console.log(`🌐 API Port: ${process.env.API_PORT || 3000}`);
+console.log(`📌 Bot Name: ${process.env.BOT_NAME}`);
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
 client.initialize().catch(err => {
     console.error('❌ Failed to initialize WhatsApp client:', err);
