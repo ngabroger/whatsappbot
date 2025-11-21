@@ -1,6 +1,18 @@
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
+
+// Check auth directory
+const authPath = path.join(__dirname, '.wwebjs_auth');
+console.log('🔍 Checking auth directory:', authPath);
+console.log('📁 Auth directory exists:', fs.existsSync(authPath));
+
+if (!fs.existsSync(authPath)) {
+    console.log('📁 Creating auth directory...');
+    fs.mkdirSync(authPath, { recursive: true });
+}
 
 // Initialize WhatsApp Client
 const client = new Client({
@@ -26,23 +38,31 @@ const client = new Client({
 
 // Event: QR Code
 client.on('qr', async (qr) => {
+    const port = process.env.API_PORT || 3000;
     console.log('\n📱 QR Code generated!');
-    console.log(`🌐 Open browser: http://localhost:${process.env.PORT || 3000}/qr`);
+    console.log(`🌐 Local: http://localhost:${port}/qr`);
+    console.log(`🌐 Remote: http://YOUR_SERVER_IP:${port}/qr`);
     
     try {
-        // Generate QR code as data URL
         const qrDataUrl = await qrcode.toDataURL(qr);
-        
-        // Store latest QR
         global.latestQR = qrDataUrl;
         
-        // Emit to all connected clients
         if (global.io) {
             global.io.emit('qr', qrDataUrl);
             console.log('✅ QR Code sent to web interface');
         }
     } catch (error) {
         console.error('❌ Error generating QR:', error);
+    }
+});
+
+// Event: Authenticated
+client.on('authenticated', () => {
+    console.log('🔐 Authentication successful!');
+    console.log('💾 Session saved to .wwebjs_auth');
+    global.latestQR = null;
+    if (global.io) {
+        global.io.emit('authenticated');
     }
 });
 
@@ -53,12 +73,11 @@ client.on('ready', () => {
     console.log(`📌 Bot Name: ${process.env.BOT_NAME}`);
     console.log(`📞 Admin: ${process.env.ADMIN_NUMBER}`);
     console.log(`📦 Version: ${process.env.VERSION}`);
+    console.log(`🌐 API: http://localhost:${process.env.API_PORT || 3000}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     
-    // Clear QR code
     global.latestQR = null;
     
-    // Emit ready status
     if (global.io) {
         global.io.emit('ready', {
             message: 'WhatsApp connected!',
@@ -219,6 +238,9 @@ async function getAllGroups() {
 
 // Initialize client with error handling
 console.log('🚀 Starting WhatsApp Bot...');
+console.log('📦 Environment:', process.env.NODE_ENV);
+console.log('🌐 Port:', process.env.API_PORT || 3000);
+
 client.initialize().catch(err => {
     console.error('❌ Failed to initialize WhatsApp client:', err);
     process.exit(1);
