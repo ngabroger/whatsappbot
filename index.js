@@ -1,8 +1,8 @@
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const qrcode = require('qrcode');
 require('dotenv').config();
 
-// Initialize WhatsApp Client
+// Initialize WhatsApp Client with Docker-friendly config
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: '.wwebjs_auth'
@@ -16,8 +16,12 @@ const client = new Client({
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--disable-gpu'
-        ]
+            '--single-process', // Important for Docker
+            '--disable-gpu',
+            '--disable-extensions',
+            '--disable-software-rasterizer'
+        ],
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser'
     }
 });
 
