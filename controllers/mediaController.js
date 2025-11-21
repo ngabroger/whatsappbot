@@ -20,7 +20,7 @@ const sendDocument = async (req, res) => {
         });
 
         fs.unlinkSync(file.path);
-        res.json({
+        res.json({  
             success: true,
             message: 'document sent successfully',
             groupId: groupId,

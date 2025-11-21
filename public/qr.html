@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Bot - QR Code Authentication</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+            display: block;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .qr-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            min-height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #qrcode {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            background: white;
+            padding: 10px;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .instructions {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .instructions h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .instructions ol {
+            color: #666;
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        .footer {
+            margin-top: 20px;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .connection-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #dc3545;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        .connection-status.connected {
+            background: #28a745;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">📱</div>
+        <h1>WhatsApp Bot Authentication</h1>
+        <p class="subtitle">
+            <span class="connection-status" id="connectionStatus"></span>
+            <span id="statusText">Connecting...</span>
+        </p>
+
+        <div class="status loading" id="status">
+            <div class="loading-spinner"></div>
+            <p style="margin-top: 10px;">Waiting for QR Code...</p>
+        </div>
+
+        <div class="qr-container" id="qrContainer">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Cara Scan QR Code:</h3>
+            <ol>
+                <li>Buka WhatsApp di ponsel Anda</li>
+                <li>Tap <strong>Menu (⋮)</strong> atau <strong>Settings (⚙️)</strong></li>
+                <li>Tap <strong>Linked Devices</strong></li>
+                <li>Tap <strong>Link a Device</strong></li>
+                <li>Scan QR Code di atas</li>
+            </ol>
+        </div>
+
+        <div class="footer">
+            <p>Bot Version: <strong id="botVersion">-</strong></p>
+            <p>Bot Name: <strong id="botName">-</strong></p>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const qrContainer = document.getElementById('qrContainer');
+        const statusDiv = document.getElementById('status');
+        const statusText = document.getElementById('statusText');
+        const connectionStatus = document.getElementById('connectionStatus');
+
+        // Connection status
+        socket.on('connect', () => {
+            console.log('Connected to server');
+            connectionStatus.classList.add('connected');
+            statusText.textContent = 'Connected';
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Disconnected from server');
+            connectionStatus.classList.remove('connected');
+            statusText.textContent = 'Disconnected';
+        });
+
+        // QR Code received
+        socket.on('qr', (qrDataUrl) => {
+            console.log('QR Code received');
+            statusDiv.className = 'status loading';
+            statusDiv.innerHTML = '<p>✅ QR Code ready! Please scan with WhatsApp</p>';
+            
+            qrContainer.innerHTML = `<img id="qrcode" src="${qrDataUrl}" alt="QR Code">`;
+        });
+
+        // Authenticated
+        socket.on('authenticated', () => {
+            console.log('Authenticated');
+            statusDiv.className = 'status success';
+            statusDiv.innerHTML = '<p>🔐 Authentication successful!</p>';
+            qrContainer.innerHTML = '<div style="color: #28a745; font-size: 48px;">✅</div><p style="color: #28a745; margin-top: 10px; font-weight: 600;">Authenticated!</p>';
+        });
+
+        // Ready
+        socket.on('ready', (data) => {
+            console.log('WhatsApp ready', data);
+            statusDiv.className = 'status success';
+            statusDiv.innerHTML = `<p>✅ ${data.message}</p>`;
+            qrContainer.innerHTML = '<div style="color: #28a745; font-size: 48px;">🚀</div><p style="color: #28a745; margin-top: 10px; font-weight: 600;">Bot is Ready!</p>';
+            
+            if (data.bot) {
+                document.getElementById('botName').textContent = data.bot;
+            }
+        });
+
+        // Loading
+        socket.on('loading', (data) => {
+            console.log('Loading...', data);
+            statusDiv.className = 'status loading';
+            statusDiv.innerHTML = `<div class="loading-spinner"></div><p style="margin-top: 10px;">Loading... ${data.percent}%</p>`;
+        });
+
+        // Auth failure
+        socket.on('auth_failure', (data) => {
+            console.error('Auth failure', data);
+            statusDiv.className = 'status error';
+            statusDiv.innerHTML = `<p>❌ Authentication failed: ${data.message}</p>`;
+        });
+
+        // Disconnected
+        socket.on('disconnected', (data) => {
+            console.log('Disconnected', data);
+            statusDiv.className = 'status error';
+            statusDiv.innerHTML = `<p>⚠️ Disconnected: ${data.reason}</p>`;
+        });
+
+        // Fetch bot info
+        fetch('/api/status')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.status === 'CONNECTED') {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = '<p>✅ Already connected!</p>';
+                    qrContainer.innerHTML = '<div style="color: #28a745; font-size: 48px;">✅</div><p style="color: #28a745; margin-top: 10px; font-weight: 600;">Already Connected!</p>';
+                }
+            })
+            .catch(err => console.error('Error fetching status:', err));
+
+        // Fetch home info
+        fetch('/')
+            .then(res => res.json())
+            .then(data => {
+                if (data.version) document.getElementById('botVersion').textContent = data.version;
+                if (data.bot) document.getElementById('botName').textContent = data.bot;
+            })
+            .catch(err => console.error('Error fetching info:', err));
+    </script>
+</body>
+</html>
