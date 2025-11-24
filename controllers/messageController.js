@@ -1,4 +1,4 @@
-const { client } = require('../cleint');
+const { client } = require('../client');
 
 
 const sendMessage = async(req, res) => {
