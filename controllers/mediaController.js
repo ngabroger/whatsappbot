@@ -1,4 +1,4 @@
-const { client } = require ('../index');
+const { client } = require ('../client');
 const { MessageMedia } = require('whatsapp-web.js');
 const fs = require('fs');
 
