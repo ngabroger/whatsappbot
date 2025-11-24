@@ -97,34 +97,6 @@ client.on('loading_screen', (percent, message) => {
     console.log(`⏳ Loading... ${percent}% - ${message}`);
 });
 
-// Event: Message Received
-client.on('message', async (message) => {
-    try {
-        const chat = await message.getChat();
-        const contact = await message.getContact();
-        
-        const messageLog = {
-            from: contact.pushname || contact.number,
-            message: message.body.substring(0, 50),
-            isGroup: chat.isGroup,
-            groupName: chat.isGroup ? chat.name : null,
-            timestamp: new Date().toISOString()
-        };
-        
-        console.log('📨 Message Received:', JSON.stringify(messageLog, null, 2));
-        
-    } catch (error) {
-        console.error('❌ Error logging message:', error);
-    }
-});
-
-// Event: Message Create
-client.on('message_create', async (message) => {
-    if (message.fromMe) {
-        console.log('📤 Message sent via API:', message.body.substring(0, 50));
-    }
-});
-
 // ==================== HELPER FUNCTIONS ====================
 
 function formatUptime(seconds) {
@@ -214,7 +186,6 @@ console.log('━━━━━━━━━━━━━━━━━━━━━━�
 
 client.initialize().catch(err => {
     console.error('❌ Failed to initialize WhatsApp client:', err);
-    // Don't exit, API server still running
 });
 
 // Graceful shutdown
