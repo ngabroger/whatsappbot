@@ -23,20 +23,8 @@ services:
     restart: unless-stopped
     networks:
       - whatsapp-network
-    healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    # Important: Increase shared memory size for Chromium
+    # Increase shared memory size for Chromium
     shm_size: '2gb'
-    # Optional: Resource limits
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-        reservations:
-          memory: 512M
 
 networks:
   whatsapp-network:
