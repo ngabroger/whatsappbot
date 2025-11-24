@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.API_PORT || process.env.PORT || 3000;
+const PORT = 3000; // HARDCODE 3000 untuk di container
 
 // Middleware
 app.use(cors());
