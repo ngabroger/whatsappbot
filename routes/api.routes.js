@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { client } = require('../client'); // Import dari client.js
 
 const { API_ROUTES } = require('../config/routes');
 const { authenticateAPI } = require('../middleware/auth');
@@ -29,7 +30,6 @@ router.get('/', (req, res) => {
 // Status
 router.get(API_ROUTES.STATUS, async (req, res) => {
     try {
-        const { client } = require('../index');
         const state = await client.getState();
         const info = client.info;
         

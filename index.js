@@ -1,4 +1,5 @@
-const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
+const { client } = require('./client');
+const { MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
@@ -21,28 +22,6 @@ console.log('━━━━━━━━━━━━━━━━━━━━━━�
 
 // Start API server immediately
 require('./api');
-
-// ==================== THEN INITIALIZE CLIENT ====================
-
-// Initialize WhatsApp Client
-const client = new Client({
-    authStrategy: new LocalAuth({
-        dataPath: '.wwebjs_auth'
-    }),
-    puppeteer: {
-        headless: true,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-background-networking',
-            '--disable-default-apps'
-        ]
-    }
-});
 
 // ==================== EVENTS ====================
 
@@ -212,7 +191,6 @@ process.on('SIGTERM', async () => {
 // ==================== EXPORTS ====================
 
 module.exports = {
-    client,
     sendMessage,
     sendMedia,
     getStatus,
