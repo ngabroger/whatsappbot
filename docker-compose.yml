@@ -11,10 +11,16 @@ services:
       - ./wwebjs_auth:/app/.wwebjs_auth
       # Persist uploads
       - ./uploads:/app/uploads
-    # Load .env file
+      # Mount source code (biar perubahan langsung kebaca)
+      - ./index.js:/app/index.js
+      - ./api.js:/app/api.js
+      - ./client.js:/app/client.js
+      - ./controllers:/app/controllers
+      - ./routes:/app/routes
+      - ./middleware:/app/middleware
+      - ./config:/app/config
     env_file:
       - .env
-    # Use tmpfs for Chromium user data (prevents lock issues)
     tmpfs:
       - /tmp:size=512M
     environment:
@@ -23,7 +29,6 @@ services:
     restart: unless-stopped
     networks:
       - whatsapp-network
-    # Increase shared memory size for Chromium
     shm_size: '2gb'
 
 networks:
