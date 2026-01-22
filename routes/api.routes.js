@@ -58,7 +58,6 @@ router.get(API_ROUTES.STATUS, async (req, res) => {
 router.post(API_ROUTES.SEND_MESSAGE, authenticateAPI, messageController.sendMessage);
 router.post(API_ROUTES.BROADCAST, authenticateAPI, messageController.broadcast);
 router.post(API_ROUTES.SEND_MESSAGE_MEDIA, authenticateAPI, messageController.sendMessageWithMedia);
-router.post(API_ROUTES.MARK_UNREAD, authenticateAPI, messageController.markUnread);
 // Group Routes
 router.get(API_ROUTES.GETALLGROUP, authenticateAPI, groupController.getAllGroups);
 router.get(API_ROUTES.GETGROUPINFO, authenticateAPI, groupController.getGroupInfo);
