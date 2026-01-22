@@ -181,58 +181,9 @@ const sendMessageWithMedia = async(req, res) => {
     }
 };
 
-/**
- * Mark a chat as unread
- */
-const markUnread = async(req, res) => {
-    try {
-        const { chatId } = req.body;
-        
-        if(!chatId) {
-            return res.status(400).json({
-                success: false,
-                message: 'chatId is required',
-                example: {
-                    personal: { chatId: "1029309809809123" },
-                    withSuffix: { chatId: "1029309809809123@c.us" },
-                    group: { chatId: "120363xxxxx@g.us" }
-                }
-            });
-        }
-
-        let formattedChatId;
-        
-        if(chatId.includes('@g.us') || chatId.includes('@c.us')) {
-            formattedChatId = chatId;
-        } else {
-            formattedChatId = `${chatId}@c.us`;
-        }
-        
-        const chat = await client.getChatById(formattedChatId);
-        await chat.markUnread();
-        
-        res.json({
-            success: true,
-            message: 'chat marked as unread',
-            chatId: formattedChatId,
-            timestamp: new Date().toISOString()
-        });
-        
-        console.log(`✅ Chat marked as unread: ${formattedChatId}`);
-        
-    } catch(error) {
-        console.error('error marking chat as unread:', error);
-        res.status(500).json({
-            success: false,
-            message: 'failed to mark chat as unread',
-            error: error.message
-        });
-    }
-};
 
 module.exports = {
     sendMessage,
     broadcast,
     sendMessageWithMedia,
-    markUnread
 };
