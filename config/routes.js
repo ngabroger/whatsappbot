@@ -10,6 +10,8 @@ const API_ROUTES = {
     SEND_DOCUMENT: '/api/send-document',
     SEND_MEDIA: '/api/send-media',
     
+    MARK_UNREAD: '/api/mark-unread',
+
     // Group Routes
     GETALLGROUP: '/api/group',
     GETGROUPINFO: '/api/group/info',
