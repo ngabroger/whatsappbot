@@ -30,7 +30,7 @@ const sendMessage = async(req, res) => {
             type = 'personal';
         }
         
-        await client.sendMessage(chatId, message);
+        await client.sendMessage(chatId, message, { sendSeen: false });
         
         res.json({
             success: true,
@@ -89,7 +89,7 @@ const broadcast = async(req, res) => {
                     type = 'personal';
                 }
                 
-                await client.sendMessage(chatId, message);
+                await client.sendMessage(chatId, message, { sendSeen: false });
                 results.push({ 
                     destination: dest, 
                     type: type,
@@ -161,7 +161,8 @@ const sendMessageWithMedia = async(req, res) => {
         const media = await MessageMedia.fromUrl(mediaUrl);
         
         await client.sendMessage(chatId, media, {
-            caption: message || ''
+            caption: message || '',
+            sendSeen: false
         });
         
         res.json({
