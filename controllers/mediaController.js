@@ -25,16 +25,32 @@ const sendDocument = async (req, res) => {
         let chatId;
         let type;
         
-        if (destination.includes('@g.us')) {
-            chatId = destination;
+        // Membersihkan karakter selain angka (opsional tapi disarankan)
+        const cleanNumber = to.replace(/\D/g, '');
+        
+        if(to.includes('@g.us')) {
+            chatId = to;
             type = 'group';
-        } else if (destination.includes('@c.us')) {
-            chatId = destination;
+        } else if(to.includes('@c.us')) {
+            chatId = to;
             type = 'personal';
         } else {
-            chatId = `${destination}@c.us`;
+            // Pastikan pakai number yg bersih contoh 628xxx...
+            chatId = `${cleanNumber}@c.us`; 
             type = 'personal';
         }
+
+        // --- TAMBAHKAN VALIDASI INI ---
+        if (type === 'personal') {
+            const isRegistered = await client.isRegisteredUser(chatId);
+            if (!isRegistered) {
+                return res.status(404).json({
+                    success: false,
+                    message: `Nomor ${to} tidak terdaftar di WhatsApp`
+                });
+            }
+        }
+        // ------------------------------
         
         const media = MessageMedia.fromFilePath(file.path);
 
@@ -91,16 +107,32 @@ const sendMedia = async (req, res) => {
         let chatId;
         let type;
         
-        if (destination.includes('@g.us')) {
-            chatId = destination;
+        // Membersihkan karakter selain angka (opsional tapi disarankan)
+        const cleanNumber = to.replace(/\D/g, '');
+        
+        if(to.includes('@g.us')) {
+            chatId = to;
             type = 'group';
-        } else if (destination.includes('@c.us')) {
-            chatId = destination;
+        } else if(to.includes('@c.us')) {
+            chatId = to;
             type = 'personal';
         } else {
-            chatId = `${destination}@c.us`;
+            // Pastikan pakai number yg bersih contoh 628xxx...
+            chatId = `${cleanNumber}@c.us`; 
             type = 'personal';
         }
+
+        // --- TAMBAHKAN VALIDASI INI ---
+        if (type === 'personal') {
+            const isRegistered = await client.isRegisteredUser(chatId);
+            if (!isRegistered) {
+                return res.status(404).json({
+                    success: false,
+                    message: `Nomor ${to} tidak terdaftar di WhatsApp`
+                });
+            }
+        }
+        // ------------------------------
         
         const media = MessageMedia.fromFilePath(file.path);
         

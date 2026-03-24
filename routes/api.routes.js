@@ -66,4 +66,7 @@ router.get(API_ROUTES.GETGROUPINFO, authenticateAPI, groupController.getGroupInf
 router.post(API_ROUTES.SEND_DOCUMENT, authenticateAPI, upload.single('file'), mediaController.sendDocument);
 router.post(API_ROUTES.SEND_MEDIA, authenticateAPI, upload.single('media'), mediaController.sendMedia);
 
+// Personal Message Route
+router.post(API_ROUTES.SEND_PERSONAL_MESSAGE, authenticateAPI, messageController.sendPersonalMessage);
+
 module.exports = router;

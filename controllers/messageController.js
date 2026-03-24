@@ -26,9 +26,12 @@ const sendMessage = async(req, res) => {
             chatId = to;
             type = 'personal';
         } else {
+            // Cukup gunakan cara lama ini persis seperti di mediaController.
             chatId = `${to}@c.us`;
             type = 'personal';
         }
+        
+        // HAPUS fungsi checking isRegisteredUser dan getNumberId
         
         await client.sendMessage(chatId, message, { sendSeen: false });
         
@@ -85,10 +88,13 @@ const broadcast = async(req, res) => {
                     chatId = dest;
                     type = 'personal';
                 } else {
+                    // Cukup gunakan cara lama ini persis seperti di mediaController.
                     chatId = `${dest}@c.us`;
                     type = 'personal';
                 }
                 
+                // HAPUS fungsi checking isRegisteredUser dan getNumberId
+        
                 await client.sendMessage(chatId, message, { sendSeen: false });
                 results.push({ 
                     destination: dest, 
@@ -135,7 +141,7 @@ const broadcast = async(req, res) => {
 };
 
 /**
- * Send message with media/document
+ *  message with media/document
  */
 const sendMessageWithMedia = async(req, res) => {
     try{
@@ -182,9 +188,57 @@ const sendMessageWithMedia = async(req, res) => {
     }
 };
 
+const sendPersonalMessage = async(req, res) => {
+    try {
+        const { to, message } = req.body;
+        
+        if(!to || !message){
+            return res.status(400).json({
+                success: false,
+                message: 'to (phone number) and message are required',
+                example: { to: "6285861585955", message: "Hello bro" }
+            });
+        }
+
+        // 1. Pastikan hanya tersisa angka (bersihkan + atau spasi)
+        const cleanNumber = to.replace(/\D/g, '');
+        const chatId = `${cleanNumber}@c.us`;
+
+        // 2. Cegah error puppeteer dengan mengecek apakah nomor terdaftar di WA
+        const isRegistered = await client.isRegisteredUser(chatId);
+        if (!isRegistered) {
+            return res.status(404).json({
+                success: false,
+                message: `Nomor ${cleanNumber} tidak terdaftar di WhatsApp.`
+            });
+        }
+        
+        // 3. Kirim pesan aman tanpa flag seen
+        await client.sendMessage(chatId, message, { sendSeen: false });
+        
+        res.json({
+            success: true,
+            message: 'Personal message sent successfully',
+            to: cleanNumber,
+            chatId: chatId,
+            timestamp: new Date().toISOString()
+        });
+        
+        console.log(`✅ Personal Message sent to: ${cleanNumber}`);
+        
+    } catch(error) {
+        console.error('error sending personal message:', error);
+        res.status(500).json({
+            success: false,
+            message: 'failed to send personal message',
+            error: error.message
+        });
+    }
+};
 
 module.exports = {
     sendMessage,
     broadcast,
     sendMessageWithMedia,
+    sendPersonalMessage
 };

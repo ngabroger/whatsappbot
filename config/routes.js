@@ -5,6 +5,7 @@ const API_ROUTES = {
     SEND_MESSAGE: '/api/send-message',           // Support both personal & group
     BROADCAST: '/api/broadcast',                 // Support both personal & group
     SEND_MESSAGE_MEDIA: '/api/send-message-media',
+    SEND_PERSONAL_MESSAGE: '/api/send-personal-message', 
     
     // Document & Media (with file upload)
     SEND_DOCUMENT: '/api/send-document',
