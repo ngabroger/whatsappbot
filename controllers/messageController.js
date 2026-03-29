@@ -50,8 +50,8 @@ const sendMessage = async(req, res) => {
         console.error('error sending message:', error);
         res.status(500).json({
             success: false,
-            message: 'failed to send message',
-            error: error.message
+            message: 'Internal Server Error / Program Error',
+            detail: error.message || error.toString()
         });
     }
 };
@@ -134,8 +134,8 @@ const broadcast = async(req, res) => {
         console.error('broadcast error:', error);
         res.status(500).json({
             success: false,
-            message: 'broadcast failed',
-            error: error.message
+            message: 'Internal Server Error / Program Error',
+            detail: error.message || error.toString()
         });
     }
 };
@@ -182,8 +182,8 @@ const sendMessageWithMedia = async(req, res) => {
         console.error('error sending media:', error);
         res.status(500).json({
             success: false,
-            message: 'failed to send media',
-            error: error.message
+            message: 'Internal Server Error / Program Error',
+            detail: error.message || error.toString()
         });
     }
 };
@@ -230,8 +230,8 @@ const sendPersonalMessage = async(req, res) => {
         console.error('error sending personal message:', error);
         res.status(500).json({
             success: false,
-            message: 'failed to send personal message',
-            error: error.message
+            message: 'Internal Server Error / Program Error',
+            detail: error.message || error.toString()
         });
     }
 };
