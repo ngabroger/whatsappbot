@@ -24,19 +24,18 @@ const sendDocument = async (req, res) => {
         // Format chat ID
         let chatId;
         let type;
-        
-        // Membersihkan karakter selain angka (opsional tapi disarankan)
-        const cleanNumber = to.replace(/\D/g, '');
-        
-        if(to.includes('@g.us')) {
-            chatId = to;
+
+        if(destination.includes('@g.us')) {
+            chatId = destination;
             type = 'group';
-        } else if(to.includes('@c.us')) {
-            chatId = to;
+        } else if(destination.includes('@c.us')) {
+            chatId = destination;
             type = 'personal';
         } else {
+            // Membersihkan karakter selain angka (opsional tapi disarankan)
             // Pastikan pakai number yg bersih contoh 628xxx...
-            chatId = `${cleanNumber}@c.us`; 
+            const cleanNumber = destination.replace(/\D/g, '');
+            chatId = `${cleanNumber}@c.us`;
             type = 'personal';
         }
 
@@ -46,12 +45,12 @@ const sendDocument = async (req, res) => {
             if (!isRegistered) {
                 return res.status(404).json({
                     success: false,
-                    message: `Nomor ${to} tidak terdaftar di WhatsApp`
+                    message: `Nomor ${destination} tidak terdaftar di WhatsApp`
                 });
             }
         }
         // ------------------------------
-        
+
         const media = MessageMedia.fromFilePath(file.path);
 
         await client.sendMessage(chatId, media, {
@@ -60,7 +59,7 @@ const sendDocument = async (req, res) => {
         });
 
         fs.unlinkSync(file.path);
-        
+
         res.json({
             success: true,
             message: 'document sent successfully',
@@ -106,19 +105,18 @@ const sendMedia = async (req, res) => {
         // Format chat ID
         let chatId;
         let type;
-        
-        // Membersihkan karakter selain angka (opsional tapi disarankan)
-        const cleanNumber = to.replace(/\D/g, '');
-        
-        if(to.includes('@g.us')) {
-            chatId = to;
+
+        if(destination.includes('@g.us')) {
+            chatId = destination;
             type = 'group';
-        } else if(to.includes('@c.us')) {
-            chatId = to;
+        } else if(destination.includes('@c.us')) {
+            chatId = destination;
             type = 'personal';
         } else {
+            // Membersihkan karakter selain angka (opsional tapi disarankan)
             // Pastikan pakai number yg bersih contoh 628xxx...
-            chatId = `${cleanNumber}@c.us`; 
+            const cleanNumber = destination.replace(/\D/g, '');
+            chatId = `${cleanNumber}@c.us`;
             type = 'personal';
         }
 
@@ -128,21 +126,21 @@ const sendMedia = async (req, res) => {
             if (!isRegistered) {
                 return res.status(404).json({
                     success: false,
-                    message: `Nomor ${to} tidak terdaftar di WhatsApp`
+                    message: `Nomor ${destination} tidak terdaftar di WhatsApp`
                 });
             }
         }
         // ------------------------------
-        
+
         const media = MessageMedia.fromFilePath(file.path);
-        
+
         await client.sendMessage(chatId, media, {
             caption: caption || '',
             sendSeen: false
         });
 
         fs.unlinkSync(file.path);
-        
+
         res.json({
             success: true,
             message: 'media sent successfully',
