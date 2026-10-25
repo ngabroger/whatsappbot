@@ -55,7 +55,8 @@ const sendDocument = async (req, res) => {
 
         await client.sendMessage(chatId, media, {
             caption: caption || '',
-            sendSeen: false
+            sendSeen: false,
+            sendMediaAsDocument: true
         });
 
         fs.unlinkSync(file.path);
